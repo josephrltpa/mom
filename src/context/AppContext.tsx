@@ -1,8 +1,7 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Medicine, VitalLog, Appointment, MedicalDocument, DailyMedicationStatus, Profile } from '../types';
 import { mockMedicines, mockVitals, mockAppointments, mockDocuments } from '../data/mockData';
 import { Language } from '../i18n/translations';
-import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 interface AppState {
   language: Language;
@@ -26,9 +25,6 @@ interface AppState {
   deleteDocument: (id: string) => void;
   medicationStatus: DailyMedicationStatus[];
   markMedicineTaken: (medicineId: string, schedule: string) => void;
-  // Supabase connection info
-  isCloudSynced: boolean;
-  userId: string | null;
 }
 
 const defaultProfile: Profile = {
@@ -42,12 +38,20 @@ const defaultProfile: Profile = {
 // Safe localStorage wrapper
 const safeStorage = {
   get: (key: string): string | null => {
-    try { return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null; }
-    catch { return null; }
+    try {
+      return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
   },
   set: (key: string, value: string): void => {
-    try { if (typeof window !== 'undefined') window.localStorage.setItem(key, value); }
-    catch { /* ignore */ }
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignore storage errors
+    }
   },
 };
 
@@ -55,88 +59,44 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isCloudSynced, setIsCloudSynced] = useState(false);
   
-  // Initialize state from localStorage (works offline + as fallback)
+  // Initialize state from localStorage
   const [profile, setProfile] = useState<Profile>(() => {
     const saved = safeStorage.get('health_profile');
     return saved ? JSON.parse(saved) : defaultProfile;
   });
+  
   const [medicines, setMedicines] = useState<Medicine[]>(() => {
     const saved = safeStorage.get('health_medicines');
     return saved ? JSON.parse(saved) : mockMedicines;
   });
+  
   const [vitals, setVitals] = useState<VitalLog[]>(() => {
     const saved = safeStorage.get('health_vitals');
     return saved ? JSON.parse(saved) : mockVitals;
   });
+  
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const saved = safeStorage.get('health_appointments');
     return saved ? JSON.parse(saved) : mockAppointments;
   });
+  
   const [documents, setDocuments] = useState<MedicalDocument[]>(() => {
     const saved = safeStorage.get('health_documents');
     return saved ? JSON.parse(saved) : mockDocuments;
   });
+  
   const [medicationStatus, setMedicationStatus] = useState<DailyMedicationStatus[]>([]);
 
-  // Check Supabase connection on mount
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setIsCloudSynced(false);
-      return;
-    }
-
-    const checkConnection = async () => {
-      try {
-        // Try to get current session
-        const { data: { session } } = await supabase!.auth.getSession();
-        
-        if (session?.user) {
-          setUserId(session.user.id);
-          setIsCloudSynced(true);
-          // TODO: Load data from Supabase instead of localStorage
-          // await loadFromSupabase(session.user.id);
-        } else {
-          // Not signed in - still works with localStorage
-          setIsCloudSynced(false);
-        }
-      } catch (err) {
-        console.log('Supabase not available, using localStorage:', err);
-        setIsCloudSynced(false);
-      }
-    };
-
-    checkConnection();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        setIsCloudSynced(true);
-      } else {
-        setUserId(null);
-        setIsCloudSynced(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Save to localStorage (always, as backup)
+  // Save to localStorage
   const saveLocal = (key: string, data: unknown) => {
     safeStorage.set(key, JSON.stringify(data));
   };
-
-  // TODO: When user signs in, these functions should also sync to Supabase
-  // For now, they save to localStorage and will be upgraded later
 
   const updateProfile = useCallback((updates: Partial<Profile>) => {
     setProfile(prev => {
       const next = { ...prev, ...updates };
       saveLocal('health_profile', next);
-      // TODO: if (isCloudSynced && userId) syncToSupabase('profiles', next);
       return next;
     });
   }, []);
@@ -252,7 +212,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appointments, addAppointment, updateAppointment, deleteAppointment,
       documents, addDocument, updateDocument, deleteDocument,
       medicationStatus, markMedicineTaken,
-      isCloudSynced, userId,
     }}>
       {children}
     </AppContext.Provider>
