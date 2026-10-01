@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Heart, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
+import { Heart, Mail, Lock, UserPlus, LogIn, AlertCircle } from 'lucide-react';
 
 interface AuthScreenProps {
   onSignIn: () => void;
@@ -18,7 +18,21 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+
+    if (!supabase) {
+      setError('Supabase is not connected. Please check your configuration.');
+      return;
+    }
+
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -26,23 +40,63 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password,
+          options: {
+            data: { full_name: fullName.trim() || 'User' },
+          },
         });
-        if (error) throw error;
-        setMessage('Account created! Check your email to confirm, then sign in.');
+
+        if (signUpError) {
+          throw signUpError;
+        }
+
+        // Check if email confirmation is required
+        if (data?.user && !data?.session) {
+          setMessage('✅ Account created! Please check your email to confirm, then come back and sign in.');
+        } else if (data?.session) {
+          setMessage('✅ Account created successfully!');
+          setTimeout(() => onSignIn(), 1000);
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password,
+        });
+
+        if (signInError) {
+          throw signInError;
+        }
+
         onSignIn();
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      console.error('Auth error:', err);
+      
+      // User-friendly error messages
+      const errorMessage = err?.message || 'Something went wrong';
+      
+      if (errorMessage.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check and try again.');
+      } else if (errorMessage.includes('Email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox for the confirmation link.');
+      } else if (errorMessage.includes('User already registered')) {
+        setError('This email is already registered. Try signing in instead.');
+      } else if (errorMessage.includes('Password')) {
+        setError('Password must be at least 6 characters long.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setIsSignUp(!isSignUp);
+    setError('');
+    setMessage('');
   };
 
   return (
@@ -55,7 +109,7 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Health Companion</h1>
           <p className="text-base text-gray-600 mt-2">
-            Cloud-synced health management for your loved ones
+            Cloud-synced health management
           </p>
         </div>
 
@@ -82,7 +136,6 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none text-base"
                     placeholder="Your name (e.g. Son/Daughter)"
-                    required={isSignUp}
                   />
                 </div>
               </div>
@@ -99,6 +152,7 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
                   className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none text-base"
                   placeholder="you@example.com"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -112,16 +166,18 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none text-base"
-                  placeholder="••••••••"
+                  placeholder="Minimum 6 characters"
                   required
                   minLength={6}
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 />
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -134,10 +190,13 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {loading ? (
-                'Please wait...'
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Please wait...
+                </>
               ) : isSignUp ? (
                 <><UserPlus className="w-5 h-5" /> Create Account</>
               ) : (
@@ -148,7 +207,8 @@ export function AuthScreen({ onSignIn, onSkip }: AuthScreenProps) {
 
           <div className="mt-4 text-center">
             <button
-              onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
+              type="button"
+              onClick={switchMode}
               className="text-sm text-indigo-600 font-semibold hover:underline"
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
