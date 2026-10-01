@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Medicine, VitalLog, Appointment, MedicalDocument, DailyMedicationStatus, Profile } from '../types';
 import { mockMedicines, mockVitals, mockAppointments, mockDocuments } from '../data/mockData';
 import { Language } from '../i18n/translations';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 interface AppState {
   language: Language;
