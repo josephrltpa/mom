@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { translations } from '../i18n/translations';
 import { getBPStatus, getSugarStatus, getStatusColor, getStatusDotColor, getStatusLabel, getRecentVitals, getAverageBP, getAverageSugar, getDaysUntil, formatDate } from '../utils/vitals';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Sparkline, DualSparkline } from '../components/Sparkline';
 import { Heart, Droplets, Pill, Calendar, Clock, Check, Plus, Edit2, Trash2, Settings } from 'lucide-react';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { Medicine } from '../types';
@@ -25,7 +25,7 @@ export default function HomePage() {
   const [sugarValue, setSugarValue] = useState('');
   const [sugarType, setSugarType] = useState<'fasting_sugar' | 'pp_sugar' | 'random_sugar'>('fasting_sugar');
   const [profileName, setProfileName] = useState(profile.full_name);
-  const [profileDob, setProfileDob] = useState(profile.date_of_birth);
+  const [profileDob, setProfileDob] = useState(profile.date_of_birth || '');
   const [profileEmergency, setProfileEmergency] = useState(profile.emergency_contact);
 
   // Medicine form
@@ -169,11 +169,11 @@ export default function HomePage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{getGreeting()},</h1>
-          <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth); setProfileEmergency(profile.emergency_contact); setShowProfileModal(true); }} className="text-lg text-indigo-600 font-semibold flex items-center gap-1">
+          <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="text-lg text-indigo-600 font-semibold flex items-center gap-1">
             {profile.full_name} <Edit2 className="w-4 h-4" />
           </button>
         </div>
-        <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth); setProfileEmergency(profile.emergency_contact); setShowProfileModal(true); }} className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+        <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
           <Settings className="w-6 h-6" />
         </button>
       </div>
@@ -245,29 +245,36 @@ export default function HomePage() {
       {chartData.length > 1 && (
         <div className="bg-white rounded-2xl p-4 mb-6 border border-gray-200">
           <h3 className="text-base font-semibold text-gray-700 mb-3">BP Trend (7 days)</h3>
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart data={chartData}>
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis domain={['dataMin - 10', 'dataMax + 10']} tick={{ fontSize: 11 }} width={35} />
-              <Tooltip />
-              <Line type="monotone" dataKey="systolic" stroke="#EF4444" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="diastolic" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <DualSparkline
+              data1={chartData.map(d => d.systolic as number)}
+              data2={chartData.map(d => d.diastolic as number)}
+              color1="#EF4444"
+              color2="#3B82F6"
+              width={Math.max(300, chartData.length * 50)}
+              height={120}
+              labels={chartData.map(d => d.date)}
+              showLabels={true}
+              legend1="Systolic"
+              legend2="Diastolic"
+            />
+          </div>
         </div>
       )}
 
       {sugarChartData.length > 1 && (
         <div className="bg-white rounded-2xl p-4 mb-6 border border-gray-200">
           <h3 className="text-base font-semibold text-gray-700 mb-3">Sugar Trend (7 days)</h3>
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart data={sugarChartData}>
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis domain={['dataMin - 20', 'dataMax + 20']} tick={{ fontSize: 11 }} width={35} />
-              <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <Sparkline
+              data={sugarChartData.map(d => d.value as number)}
+              color="#3B82F6"
+              width={Math.max(300, sugarChartData.length * 50)}
+              height={120}
+              labels={sugarChartData.map(d => d.date)}
+              showLabels={true}
+            />
+          </div>
         </div>
       )}
 
