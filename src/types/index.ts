@@ -17,6 +17,8 @@ export interface Medicine {
   photo_url?: string;
   is_active: boolean;
   color?: string;
+  doctor_id?: string;
+  reminder_time?: string; // HH:MM format
 }
 
 export interface VitalLog {

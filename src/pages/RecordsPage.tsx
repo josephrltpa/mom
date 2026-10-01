@@ -27,6 +27,8 @@ export default function RecordsPage() {
   const [docDoctor, setDocDoctor] = useState('');
   const [docStatus, setDocStatus] = useState<'active' | 'past'>('active');
   const [docMetrics, setDocMetrics] = useState('');
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [docFilePreview, setDocFilePreview] = useState<string>('');
 
   // Appointment form
   const [aptDoctor, setAptDoctor] = useState('');
@@ -71,7 +73,7 @@ export default function RecordsPage() {
   const openAddDoc = () => {
     setEditingDoc(null);
     setDocTitle(''); setDocCategory('lft'); setDocDate(new Date().toISOString().split('T')[0]);
-    setDocDoctor(''); setDocStatus('active'); setDocMetrics('');
+    setDocDoctor(''); setDocStatus('active'); setDocMetrics(''); setDocFile(null); setDocFilePreview('');
     setShowDocModal(true);
   };
 
@@ -92,10 +94,13 @@ export default function RecordsPage() {
         if (key && val && !isNaN(parseFloat(val))) metrics[key] = parseFloat(val);
       });
     }
+    // For now, store file as base64 data URL (in production, upload to Supabase Storage)
+    const fileUrl = docFilePreview || undefined;
+    
     if (editingDoc) {
-      updateDocument(editingDoc.id, { title: docTitle, category: docCategory, test_date: docDate, prescribing_doctor: docDoctor, status: docStatus, metrics });
+      updateDocument(editingDoc.id, { title: docTitle, category: docCategory, test_date: docDate, prescribing_doctor: docDoctor, status: docStatus, metrics, file_url: fileUrl });
     } else {
-      addDocument({ title: docTitle, category: docCategory, test_date: docDate, prescribing_doctor: docDoctor, status: docStatus, metrics });
+      addDocument({ title: docTitle, category: docCategory, test_date: docDate, prescribing_doctor: docDoctor, status: docStatus, metrics, file_url: fileUrl });
     }
     setShowDocModal(false);
   };
@@ -373,15 +378,23 @@ export default function RecordsPage() {
           <div>
             <label className="text-base font-medium text-gray-700 mb-1 block">Title</label>
             <input type="text" value={docTitle} onChange={(e) => setDocTitle(e.target.value)}
-              className="w-full text-lg border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none" placeholder="e.g. LFT Report" />
+              className="w-full text-lg border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none" placeholder="e.g. Kidney Function Test" />
           </div>
           <div>
             <label className="text-base font-medium text-gray-700 mb-2 block">Category</label>
             <div className="flex gap-2 flex-wrap">
-              {(['lft', 'hba1c', 'lipid', 'kft', 'imaging', 'prescription', 'other'] as const).map(cat => (
-                <button key={cat} onClick={() => setDocCategory(cat)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold uppercase ${docCategory === cat ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                  {cat}
+              {([
+                { key: 'lft', label: 'Liver (LFT)' },
+                { key: 'hba1c', label: 'HbA1c' },
+                { key: 'lipid', label: 'Lipid' },
+                { key: 'kft', label: 'Kidney (KFT)' },
+                { key: 'imaging', label: 'Imaging' },
+                { key: 'prescription', label: 'Prescription' },
+                { key: 'other', label: 'Other' },
+              ] as const).map(cat => (
+                <button key={cat.key} onClick={() => setDocCategory(cat.key)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold ${docCategory === cat.key ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  {cat.label}
                 </button>
               ))}
             </div>
@@ -404,10 +417,39 @@ export default function RecordsPage() {
             </div>
           </div>
           <div>
-            <label className="text-base font-medium text-gray-700 mb-1 block">Key Values (optional)</label>
-            <input type="text" value={docMetrics} onChange={(e) => setDocMetrics(e.target.value)}
-              className="w-full text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none" placeholder="SGPT=68, SGOT=52, Bilirubin=1.2" />
-            <p className="text-xs text-gray-400 mt-1">Format: Key=Value, Key=Value</p>
+            <label className="text-base font-medium text-gray-700 mb-1 block">Test Results (optional)</label>
+            <textarea
+              value={docMetrics}
+              onChange={(e) => setDocMetrics(e.target.value)}
+              className="w-full text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none resize-none"
+              rows={3}
+              placeholder="Albumin=3.5, Creatinine=1.2, Urea=40"
+            />
+            <p className="text-xs text-gray-400 mt-1">Enter test names and values (e.g. Albumin=3.5, Creatinine=1.2)</p>
+          </div>
+          <div>
+            <label className="text-base font-medium text-gray-700 mb-1 block">Upload Document (optional)</label>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setDocFile(file);
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setDocFilePreview(reader.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="w-full text-sm border-2 border-gray-300 rounded-xl p-2"
+            />
+            {docFilePreview && (
+              <div className="mt-2">
+                <img src={docFilePreview} alt="Preview" className="max-h-32 rounded-lg border" />
+              </div>
+            )}
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => setShowDocModal(false)} className="flex-1 py-4 text-lg font-semibold text-gray-600 bg-gray-100 rounded-xl">Cancel</button>
