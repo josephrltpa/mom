@@ -36,7 +36,7 @@ interface AppState {
 
 const defaultProfile: Profile = {
   id: 'user-1',
-  full_name: 'Mom',
+  full_name: '',
   date_of_birth: '',
   emergency_contact: '',
   language: 'en',

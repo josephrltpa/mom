@@ -187,7 +187,7 @@ export default function HomePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{getGreeting()},</h1>
           <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="text-lg text-indigo-600 font-semibold flex items-center gap-1">
-            {profile.full_name} <Edit2 className="w-4 h-4" />
+            {profile.full_name || 'Tap to set name'} <Edit2 className="w-4 h-4" />
           </button>
         </div>
         <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
