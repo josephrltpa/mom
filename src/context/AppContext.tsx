@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Medicine, VitalLog, Appointment, MedicalDocument, DailyMedicationStatus, Profile } from '../types';
 import { mockMedicines, mockVitals, mockAppointments, mockDocuments } from '../data/mockData';
 import { Language } from '../i18n/translations';
@@ -37,33 +37,53 @@ const defaultProfile: Profile = {
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
+// Safe localStorage wrapper
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  },
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
   const [profile, setProfile] = useState<Profile>(() => {
-    const saved = localStorage.getItem('health_profile');
+    const saved = safeLocalStorage.getItem('health_profile');
     return saved ? JSON.parse(saved) : defaultProfile;
   });
   const [medicines, setMedicines] = useState<Medicine[]>(() => {
-    const saved = localStorage.getItem('health_medicines');
+    const saved = safeLocalStorage.getItem('health_medicines');
     return saved ? JSON.parse(saved) : mockMedicines;
   });
   const [vitals, setVitals] = useState<VitalLog[]>(() => {
-    const saved = localStorage.getItem('health_vitals');
+    const saved = safeLocalStorage.getItem('health_vitals');
     return saved ? JSON.parse(saved) : mockVitals;
   });
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
-    const saved = localStorage.getItem('health_appointments');
+    const saved = safeLocalStorage.getItem('health_appointments');
     return saved ? JSON.parse(saved) : mockAppointments;
   });
   const [documents, setDocuments] = useState<MedicalDocument[]>(() => {
-    const saved = localStorage.getItem('health_documents');
+    const saved = safeLocalStorage.getItem('health_documents');
     return saved ? JSON.parse(saved) : mockDocuments;
   });
   const [medicationStatus, setMedicationStatus] = useState<DailyMedicationStatus[]>([]);
 
   // Persist to localStorage
   const persist = (key: string, data: unknown) => {
-    localStorage.setItem(key, JSON.stringify(data));
+    safeLocalStorage.setItem(key, JSON.stringify(data));
   };
 
   const updateProfile = useCallback((updates: Partial<Profile>) => {

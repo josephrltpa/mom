@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { translations } from '../i18n/translations';
 import { formatDate, formatTime, getBPStatus, getSugarStatus, getStatusColor, getStatusLabel } from '../utils/vitals';
