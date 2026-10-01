@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import HomePage from './pages/HomePage';
 import RecordsPage from './pages/RecordsPage';
 import DoctorViewPage from './pages/DoctorViewPage';
+import { ConnectionStatus } from './components/ConnectionStatus';
 import { Home, FileText, Stethoscope, Globe } from 'lucide-react';
 
 type Tab = 'home' | 'records' | 'doctor';
@@ -13,6 +14,11 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Connection Status Indicator */}
+      <div className="fixed top-2 right-2 z-50">
+        <ConnectionStatus />
+      </div>
+
       {/* Main Content */}
       <main className="pt-safe">
         {activeTab === 'home' && <HomePage />}
