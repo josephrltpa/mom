@@ -7,6 +7,7 @@ export function DebugPanel() {
   const [envVars, setEnvVars] = useState({
     url: import.meta.env.VITE_SUPABASE_URL || 'NOT SET',
     key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET (hidden)' : 'NOT SET',
+    test: import.meta.env.VITE_TEST_VAR || 'NOT SET',
   });
 
   useEffect(() => {
@@ -44,6 +45,13 @@ export function DebugPanel() {
           <span className="text-gray-600">VITE_SUPABASE_ANON_KEY:</span>
           <span className={`font-mono ${envVars.key === 'NOT SET' ? 'text-red-600' : 'text-green-600'}`}>
             {envVars.key === 'NOT SET' ? '❌ NOT SET' : '✅ Set'}
+          </span>
+        </div>
+
+        <div className="flex items-start justify-between">
+          <span className="text-gray-600">VITE_TEST_VAR:</span>
+          <span className={`font-mono ${envVars.test === 'NOT SET' ? 'text-red-600' : 'text-green-600'}`}>
+            {envVars.test === 'NOT SET' ? '❌ NOT SET' : `✅ ${envVars.test}`}
           </span>
         </div>
 
