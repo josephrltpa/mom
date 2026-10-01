@@ -1,16 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import HomePage from './pages/HomePage';
 import RecordsPage from './pages/RecordsPage';
 import DoctorViewPage from './pages/DoctorViewPage';
 import { ConnectionStatus } from './components/ConnectionStatus';
-import { Home, FileText, Stethoscope, Globe } from 'lucide-react';
+import { AuthScreen } from './components/AuthScreen';
+import { isSupabaseConfigured, supabase } from './services/supabaseClient';
+import { Home, FileText, Stethoscope } from 'lucide-react';
 
 type Tab = 'home' | 'records' | 'doctor';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const { language, setLanguage } = useApp();
+  const { language, setLanguage, isCloudSynced } = useApp();
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check if user needs to sign in
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        setAuthChecked(true);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setNeedsAuth(true);
+      }
+      setAuthChecked(true);
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleSignIn = () => {
+    setNeedsAuth(false);
+  };
+
+  const handleSkip = () => {
+    setNeedsAuth(false);
+  };
+
+  // Show auth screen if Supabase is configured but user not signed in
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsAuth && isSupabaseConfigured) {
+    return <AuthScreen onSignIn={handleSignIn} onSkip={handleSkip} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,9 +123,9 @@ function AppContent() {
             className="flex flex-col items-center py-2 px-3 text-gray-500 hover:text-indigo-600 transition-all"
           >
             <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100">
-              <Globe className="w-5 h-5" />
+              <span className="text-sm font-bold">{language === 'en' ? 'MZ' : 'EN'}</span>
             </div>
-            <span className="text-[10px] font-semibold mt-0.5">{language === 'en' ? 'Mizo' : 'EN'}</span>
+            <span className="text-[10px] font-semibold mt-0.5">{language === 'en' ? 'Mizo' : 'English'}</span>
           </button>
         </div>
       </nav>
