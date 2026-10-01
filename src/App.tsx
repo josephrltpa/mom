@@ -5,7 +5,6 @@ import RecordsPage from './pages/RecordsPage';
 import DoctorViewPage from './pages/DoctorViewPage';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { AuthScreen } from './components/AuthScreen';
-import { DebugToggle } from './components/DebugPanel';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { Home, FileText, Stethoscope } from 'lucide-react';
 
@@ -25,14 +24,33 @@ function AppContent() {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setNeedsAuth(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          setNeedsAuth(true);
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
       }
+      
       setAuthChecked(true);
     };
 
     checkAuth();
+
+    // Listen for auth state changes
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        if (event === 'SIGNED_IN' && session) {
+          setNeedsAuth(false);
+        } else if (event === 'SIGNED_OUT') {
+          setNeedsAuth(true);
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const handleSignIn = () => {
@@ -43,10 +61,10 @@ function AppContent() {
     setNeedsAuth(false);
   };
 
-  // Show auth screen if Supabase is configured but user not signed in
+  // Show loading while checking auth
   if (!authChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -55,6 +73,7 @@ function AppContent() {
     );
   }
 
+  // Show auth screen if Supabase is configured but user not signed in
   if (needsAuth && isSupabaseConfigured) {
     return <AuthScreen onSignIn={handleSignIn} onSkip={handleSkip} />;
   }
@@ -133,6 +152,37 @@ function AppContent() {
           </button>
         </div>
       </nav>
+    </div>
+  );
+}
+
+// Simple debug toggle
+function DebugToggle() {
+  const [show, setShow] = useState(false);
+
+  if (!show) {
+    return (
+      <button
+        onClick={() => setShow(true)}
+        className="fixed bottom-20 left-2 w-10 h-10 bg-gray-800 text-white rounded-full shadow-lg z-50 flex items-center justify-center text-xs font-bold"
+        title="Show Debug Panel"
+      >
+        🐛
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-20 left-2 right-2 bg-white border-2 border-gray-300 rounded-xl p-4 shadow-lg z-50 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-sm text-gray-900">🔧 Debug Info</h3>
+        <button onClick={() => setShow(false)} className="text-xs text-gray-500">Close</button>
+      </div>
+      <div className="text-xs space-y-1">
+        <p>Supabase Configured: <strong>{isSupabaseConfigured ? '✅ Yes' : '❌ No'}</strong></p>
+        <p>URL: <strong>{import.meta.env.VITE_SUPABASE_URL || 'NOT SET'}</strong></p>
+        <p>Key: <strong>{import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set (hidden)' : 'NOT SET'}</strong></p>
+      </div>
     </div>
   );
 }
