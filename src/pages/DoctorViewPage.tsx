@@ -5,7 +5,7 @@ import { getAverageBP, getAverageSugar, getBPStatus, getSugarStatus, getStatusCo
 import { Stethoscope, Pill, Heart, Droplets, FileText, Share2, Download, Calendar } from 'lucide-react';
 
 export default function DoctorViewPage() {
-  const { language, medicines, vitals, documents, appointments } = useApp();
+  const { language, profile, medicines, vitals, documents, appointments } = useApp();
   const t = translations[language];
 
   const activeMedicines = medicines.filter(m => m.is_active);
@@ -40,7 +40,8 @@ export default function DoctorViewPage() {
     const summary = `
 CLINIC SUMMARY - Health Companion
 ================================
-Patient: Pa (Dad)
+Patient: ${profile.full_name}
+${profile.date_of_birth ? `DOB: ${new Date(profile.date_of_birth).toLocaleDateString()}` : ''}
 Generated: ${new Date().toLocaleDateString()}
 
 ACTIVE MEDICATIONS:
@@ -103,8 +104,14 @@ Next Appointment: ${nextAppointment ? `${nextAppointment.doctor_name} - ${format
       {/* Patient Info */}
       <div className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
         <p className="text-base text-gray-500">Patient</p>
-        <p className="text-xl font-bold text-gray-900">Pa (Father)</p>
-        <p className="text-base text-gray-600">Conditions: Hypertension, Type 2 Diabetes, Liver Disease</p>
+        <p className="text-xl font-bold text-gray-900">{profile.full_name}</p>
+        {profile.date_of_birth && (
+          <p className="text-sm text-gray-500">DOB: {new Date(profile.date_of_birth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        )}
+        <p className="text-base text-gray-600 mt-1">Conditions: Hypertension, Type 2 Diabetes, Liver Disease</p>
+        {profile.emergency_contact && (
+          <p className="text-sm text-gray-500 mt-1">📞 Emergency: {profile.emergency_contact}</p>
+        )}
       </div>
 
       {/* Active Medications */}

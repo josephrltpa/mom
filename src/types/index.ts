@@ -1,8 +1,8 @@
 export interface Profile {
   id: string;
   full_name: string;
-  date_of_birth: string;
-  emergency_contact: string;
+  date_of_birth?: string;
+  emergency_contact?: string;
   caregiver_link?: string;
   language: 'en' | 'mizo';
 }
