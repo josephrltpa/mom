@@ -10,8 +10,16 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Debug: Log what we're seeing (remove after fixing)
+console.log('🔍 Supabase Debug:', {
+  url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'EMPTY',
+  key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'EMPTY',
+  urlLength: supabaseUrl.length,
+  keyLength: supabaseAnonKey.length,
+});
+
 // Check if Supabase is properly configured
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project'));
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 // Create Supabase client only if configured
 export const supabase: SupabaseClient | null = isSupabaseConfigured
