@@ -5,6 +5,7 @@ import RecordsPage from './pages/RecordsPage';
 import DoctorViewPage from './pages/DoctorViewPage';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { AuthScreen } from './components/AuthScreen';
+import { DebugToggle } from './components/DebugPanel';
 import { isSupabaseConfigured, supabase } from './services/supabaseClient';
 import { Home, FileText, Stethoscope } from 'lucide-react';
 
@@ -64,6 +65,9 @@ function AppContent() {
       <div className="fixed top-2 right-2 z-50">
         <ConnectionStatus />
       </div>
+
+      {/* Debug Panel Toggle */}
+      <DebugToggle />
 
       {/* Main Content */}
       <main className="pt-safe">
