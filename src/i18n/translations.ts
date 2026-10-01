@@ -92,7 +92,7 @@ export const translations = {
     vitalsToday: "Tunhnai Vitals",
     logBP: 'BP zat ziak la',
     logSugar: 'Sugar zat Ziak la',
-    medications: 'Damdawi chawh',
+    medications: 'Damdawi ei lai',
     taken: 'Ei/ti tawh ✓',
     markTaken: 'Ei/ti zo tawh',
     upcomingAppointments: 'Appointments lo kal tur',
