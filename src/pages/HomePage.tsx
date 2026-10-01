@@ -8,7 +8,7 @@ import { Modal, ConfirmDialog } from '../components/Modal';
 import { Medicine } from '../types';
 
 export default function HomePage() {
-  const { language, profile, updateProfile, medicines, vitals, appointments, medicationStatus, addVital, markMedicineTaken, addMedicine, updateMedicine, deleteMedicine } = useApp();
+  const { language, profile, updateProfile, medicines, vitals, appointments, medicationStatus, doctors, addVital, markMedicineTaken, addMedicine, updateMedicine, deleteMedicine } = useApp();
   const t = translations[language];
 
   // Modals
@@ -34,6 +34,8 @@ export default function HomePage() {
   const [medSchedule, setMedSchedule] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [medMeal, setMedMeal] = useState<'before_meal' | 'after_meal' | 'anytime'>('after_meal');
   const [medCondition, setMedCondition] = useState<'bp' | 'diabetes' | 'liver' | 'general'>('bp');
+  const [medDoctor, setMedDoctor] = useState('');
+  const [medReminderTime, setMedReminderTime] = useState('08:00');
 
   const latestBP = getRecentVitals(vitals, 1).find(v => v.type === 'bp');
   const latestSugar = getRecentVitals(vitals, 1).find(v => v.type !== 'bp');
@@ -94,7 +96,8 @@ export default function HomePage() {
 
   const openAddMedicine = () => {
     setEditingMedicine(null);
-    setMedName(''); setMedDosage(''); setMedSchedule('morning'); setMedMeal('after_meal'); setMedCondition('bp');
+    setMedName(''); setMedDosage(''); setMedSchedule('morning'); setMedMeal('after_meal'); 
+    setMedCondition('bp'); setMedDoctor(''); setMedReminderTime('08:00');
     setShowMedicineModal(true);
   };
 
@@ -102,15 +105,22 @@ export default function HomePage() {
     setEditingMedicine(med);
     setMedName(med.name); setMedDosage(med.dosage); setMedSchedule(med.schedule);
     setMedMeal(med.meal_relation); setMedCondition(med.condition_category);
+    setMedDoctor(med.doctor_id || ''); setMedReminderTime(med.reminder_time || '08:00');
     setShowMedicineModal(true);
   };
 
   const handleSaveMedicine = () => {
     if (!medName || !medDosage) return;
     if (editingMedicine) {
-      updateMedicine(editingMedicine.id, { name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, condition_category: medCondition });
+      updateMedicine(editingMedicine.id, { 
+        name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, 
+        condition_category: medCondition, doctor_id: medDoctor || undefined, reminder_time: medReminderTime 
+      });
     } else {
-      addMedicine({ name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, condition_category: medCondition, is_active: true });
+      addMedicine({ 
+        name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, 
+        condition_category: medCondition, is_active: true, doctor_id: medDoctor || undefined, reminder_time: medReminderTime 
+      });
     }
     setShowMedicineModal(false);
   };
@@ -134,6 +144,7 @@ export default function HomePage() {
   const renderMedCard = (med: Medicine, schedule: string) => {
     const taken = isTaken(med.id, schedule);
     const badge = getConditionBadge(med.condition_category);
+    const doctor = med.doctor_id ? doctors.find(d => d.id === med.doctor_id) : null;
     return (
       <div key={med.id} className={`bg-white rounded-xl p-3 mb-2 border-2 ${taken ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
         <div className="flex items-start justify-between">
@@ -146,6 +157,12 @@ export default function HomePage() {
             <p className="text-sm text-gray-500 mt-0.5">
               {med.meal_relation === 'before_meal' ? t.beforeMeal : med.meal_relation === 'after_meal' ? t.afterMeal : t.anytime}
             </p>
+            {doctor && (
+              <p className="text-xs text-indigo-600 mt-0.5">👨‍⚕️ {doctor.name}</p>
+            )}
+            {med.reminder_time && (
+              <p className="text-xs text-gray-400 mt-0.5">⏰ {med.reminder_time}</p>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => openEditMedicine(med)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500">
@@ -484,6 +501,34 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="text-base font-medium text-gray-700 mb-1 block">Prescribed by Doctor (optional)</label>
+            <select
+              value={medDoctor}
+              onChange={(e) => setMedDoctor(e.target.value)}
+              className="w-full text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">-- Select Doctor --</option>
+              {doctors.map(doc => (
+                <option key={doc.id} value={doc.id}>{doc.name} - {doc.specialty}</option>
+              ))}
+            </select>
+            {doctors.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">Add doctors first in the Doctors tab</p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-base font-medium text-gray-700 mb-1 block">Reminder Time</label>
+            <input
+              type="time"
+              value={medReminderTime}
+              onChange={(e) => setMedReminderTime(e.target.value)}
+              className="w-full text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">You'll get a notification at this time</p>
           </div>
           {editingMedicine && (
             <button onClick={() => { setDeleteConfirm(editingMedicine.id); setShowMedicineModal(false); }}

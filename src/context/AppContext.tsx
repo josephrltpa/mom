@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Medicine, VitalLog, Appointment, MedicalDocument, DailyMedicationStatus, Profile } from '../types';
+import { Doctor } from '../types/Doctor';
 import { mockMedicines, mockVitals, mockAppointments, mockDocuments } from '../data/mockData';
 import { Language } from '../i18n/translations';
 
@@ -25,6 +26,12 @@ interface AppState {
   deleteDocument: (id: string) => void;
   medicationStatus: DailyMedicationStatus[];
   markMedicineTaken: (medicineId: string, schedule: string) => void;
+  // Doctors
+  doctors: Doctor[];
+  addDoctor: (doctor: Omit<Doctor, 'id'>) => void;
+  updateDoctor: (id: string, updates: Partial<Doctor>) => void;
+  deleteDoctor: (id: string) => void;
+  getDoctorById: (id: string) => Doctor | undefined;
 }
 
 const defaultProfile: Profile = {
@@ -84,6 +91,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<MedicalDocument[]>(() => {
     const saved = safeStorage.get('health_documents');
     return saved ? JSON.parse(saved) : mockDocuments;
+  });
+
+  const [doctors, setDoctors] = useState<Doctor[]>(() => {
+    const saved = safeStorage.get('health_doctors');
+    return saved ? JSON.parse(saved) : [];
   });
   
   const [medicationStatus, setMedicationStatus] = useState<DailyMedicationStatus[]>([]);
@@ -203,6 +215,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Doctor management
+  const addDoctor = useCallback((doctor: Omit<Doctor, 'id'>) => {
+    setDoctors(prev => {
+      const next = [...prev, { ...doctor, id: `doc_${Date.now()}` }];
+      saveLocal('health_doctors', next);
+      return next;
+    });
+  }, []);
+
+  const updateDoctor = useCallback((id: string, updates: Partial<Doctor>) => {
+    setDoctors(prev => {
+      const next = prev.map(d => d.id === id ? { ...d, ...updates } : d);
+      saveLocal('health_doctors', next);
+      return next;
+    });
+  }, []);
+
+  const deleteDoctor = useCallback((id: string) => {
+    setDoctors(prev => {
+      const next = prev.filter(d => d.id !== id);
+      saveLocal('health_doctors', next);
+      return next;
+    });
+  }, []);
+
+  const getDoctorById = useCallback((id: string) => {
+    return doctors.find(d => d.id === id);
+  }, [doctors]);
+
   return (
     <AppContext.Provider value={{
       language, setLanguage,
@@ -212,6 +253,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appointments, addAppointment, updateAppointment, deleteAppointment,
       documents, addDocument, updateDocument, deleteDocument,
       medicationStatus, markMedicineTaken,
+      doctors, addDoctor, updateDoctor, deleteDoctor, getDoctorById,
     }}>
       {children}
     </AppContext.Provider>
