@@ -5,11 +5,12 @@ import RecordsPage from './pages/RecordsPage';
 import DoctorViewPage from './pages/DoctorViewPage';
 import DoctorsPage from './pages/DoctorsPage';
 import CaregiverDashboard from './pages/CaregiverDashboard';
+import FamilySetup from './pages/FamilySetup';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { requestNotificationPermission, reminderService } from './services/notifications';
-import { Home, FileText, Stethoscope, UserCircle, Eye } from 'lucide-react';
+import { Home, FileText, Stethoscope, UserCircle, Eye, Users } from 'lucide-react';
 
-type Tab = 'home' | 'records' | 'doctors' | 'doctor' | 'caregiver';
+type Tab = 'home' | 'records' | 'doctors' | 'doctor' | 'caregiver' | 'family';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -52,6 +53,7 @@ function AppContent() {
         {activeTab === 'doctors' && <DoctorsPage />}
         {activeTab === 'doctor' && <DoctorViewPage />}
         {activeTab === 'caregiver' && <CaregiverDashboard />}
+        {activeTab === 'family' && <FamilySetup />}
       </main>
 
       {/* Bottom Navigation */}
@@ -125,6 +127,20 @@ function AppContent() {
               <Eye className="w-6 h-6" />
             </div>
             <span className="text-[10px] font-semibold mt-0.5">Monitor</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('family')}
+            className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
+              activeTab === 'family' ? 'text-indigo-600' : 'text-gray-400'
+            }`}
+          >
+            <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
+              activeTab === 'family' ? 'bg-indigo-100' : ''
+            }`}>
+              <Users className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-semibold mt-0.5">Family</span>
           </button>
 
           {/* Language Toggle */}
