@@ -11,14 +11,14 @@ export interface Medicine {
   id: string;
   name: string;
   dosage: string;
-  schedule: 'morning' | 'afternoon' | 'night';
+  schedule: 'morning' | 'afternoon' | 'night' | 'custom';
   meal_relation: 'before_meal' | 'after_meal' | 'anytime';
   condition_category: 'bp' | 'diabetes' | 'liver' | 'general';
   photo_url?: string;
   is_active: boolean;
   color?: string;
   doctor_id?: string;
-  reminder_time?: string; // HH:MM format
+  reminder_times?: string[]; // Array of HH:MM format times for multiple daily reminders
 }
 
 export interface VitalLog {

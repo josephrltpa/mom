@@ -31,11 +31,12 @@ export default function HomePage() {
   // Medicine form
   const [medName, setMedName] = useState('');
   const [medDosage, setMedDosage] = useState('');
-  const [medSchedule, setMedSchedule] = useState<'morning' | 'afternoon' | 'night'>('morning');
+  const [medSchedule, setMedSchedule] = useState<'morning' | 'afternoon' | 'night' | 'custom'>('morning');
   const [medMeal, setMedMeal] = useState<'before_meal' | 'after_meal' | 'anytime'>('after_meal');
   const [medCondition, setMedCondition] = useState<'bp' | 'diabetes' | 'liver' | 'general'>('bp');
   const [medDoctor, setMedDoctor] = useState('');
-  const [medReminderTime, setMedReminderTime] = useState('08:00');
+  const [medReminderTimes, setMedReminderTimes] = useState<string[]>(['08:00']);
+  const [newReminderTime, setNewReminderTime] = useState('');
 
   const latestBP = getRecentVitals(vitals, 1).find(v => v.type === 'bp');
   const latestSugar = getRecentVitals(vitals, 1).find(v => v.type !== 'bp');
@@ -50,6 +51,7 @@ export default function HomePage() {
   const morningMeds = activeMedicines.filter(m => m.schedule === 'morning');
   const afternoonMeds = activeMedicines.filter(m => m.schedule === 'afternoon');
   const nightMeds = activeMedicines.filter(m => m.schedule === 'night');
+  const customMeds = activeMedicines.filter(m => m.schedule === 'custom');
 
   const isTaken = (medId: string, schedule: string) => {
     return medicationStatus.some(s => s.medicineId === medId && s.schedule === schedule && s.taken);
@@ -97,7 +99,7 @@ export default function HomePage() {
   const openAddMedicine = () => {
     setEditingMedicine(null);
     setMedName(''); setMedDosage(''); setMedSchedule('morning'); setMedMeal('after_meal'); 
-    setMedCondition('bp'); setMedDoctor(''); setMedReminderTime('08:00');
+    setMedCondition('bp'); setMedDoctor(''); setMedReminderTimes(['08:00']); setNewReminderTime('');
     setShowMedicineModal(true);
   };
 
@@ -105,8 +107,21 @@ export default function HomePage() {
     setEditingMedicine(med);
     setMedName(med.name); setMedDosage(med.dosage); setMedSchedule(med.schedule);
     setMedMeal(med.meal_relation); setMedCondition(med.condition_category);
-    setMedDoctor(med.doctor_id || ''); setMedReminderTime(med.reminder_time || '08:00');
+    setMedDoctor(med.doctor_id || ''); 
+    setMedReminderTimes(med.reminder_times && med.reminder_times.length > 0 ? med.reminder_times : ['08:00']);
+    setNewReminderTime('');
     setShowMedicineModal(true);
+  };
+
+  const addReminderTime = () => {
+    if (newReminderTime && !medReminderTimes.includes(newReminderTime)) {
+      setMedReminderTimes([...medReminderTimes, newReminderTime].sort());
+      setNewReminderTime('');
+    }
+  };
+
+  const removeReminderTime = (time: string) => {
+    setMedReminderTimes(medReminderTimes.filter(t => t !== time));
   };
 
   const handleSaveMedicine = () => {
@@ -114,12 +129,12 @@ export default function HomePage() {
     if (editingMedicine) {
       updateMedicine(editingMedicine.id, { 
         name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, 
-        condition_category: medCondition, doctor_id: medDoctor || undefined, reminder_time: medReminderTime 
+        condition_category: medCondition, doctor_id: medDoctor || undefined, reminder_times: medReminderTimes 
       });
     } else {
       addMedicine({ 
         name: medName, dosage: medDosage, schedule: medSchedule, meal_relation: medMeal, 
-        condition_category: medCondition, is_active: true, doctor_id: medDoctor || undefined, reminder_time: medReminderTime 
+        condition_category: medCondition, is_active: true, doctor_id: medDoctor || undefined, reminder_times: medReminderTimes 
       });
     }
     setShowMedicineModal(false);
@@ -160,8 +175,8 @@ export default function HomePage() {
             {doctor && (
               <p className="text-xs text-indigo-600 mt-0.5">👨‍⚕️ {doctor.name}</p>
             )}
-            {med.reminder_time && (
-              <p className="text-xs text-gray-400 mt-0.5">⏰ {med.reminder_time}</p>
+            {med.reminder_times && med.reminder_times.length > 0 && (
+              <p className="text-xs text-gray-400 mt-0.5">⏰ {med.reminder_times.join(', ')}</p>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -331,6 +346,15 @@ export default function HomePage() {
           </div>
         )}
 
+        {customMeds.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-purple-700 mb-2 flex items-center gap-2">
+              <span className="text-lg">⏰</span> Custom Schedule
+            </h3>
+            {customMeds.map(med => renderMedCard(med, 'custom'))}
+          </div>
+        )}
+
         {activeMedicines.length === 0 && (
           <div className="bg-gray-50 rounded-2xl p-6 text-center border-2 border-dashed border-gray-300">
             <Pill className="w-10 h-10 text-gray-400 mx-auto mb-2" />
@@ -466,14 +490,17 @@ export default function HomePage() {
           </div>
           <div>
             <label className="text-base font-medium text-gray-700 mb-2 block">Schedule</label>
-            <div className="flex gap-2">
-              {(['morning', 'afternoon', 'night'] as const).map(s => (
+            <div className="flex gap-2 flex-wrap">
+              {(['morning', 'afternoon', 'night', 'custom'] as const).map(s => (
                 <button key={s} onClick={() => setMedSchedule(s)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold capitalize ${medSchedule === s ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                  {s === 'morning' ? '🌅' : s === 'afternoon' ? '☀️' : '🌙'} {s}
+                  className={`flex-1 py-3 px-2 rounded-xl text-sm font-semibold capitalize ${medSchedule === s ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                  {s === 'morning' ? '🌅 Morning' : s === 'afternoon' ? '☀️ Afternoon' : s === 'night' ? '🌙 Night' : '⏰ Custom'}
                 </button>
               ))}
             </div>
+            {medSchedule === 'custom' && (
+              <p className="text-xs text-gray-500 mt-2">💡 Use custom schedule for medicines taken multiple times a day (e.g., eye drops 4x/day). Add all reminder times below.</p>
+            )}
           </div>
           <div>
             <label className="text-base font-medium text-gray-700 mb-2 block">Meal Timing</label>
@@ -521,14 +548,43 @@ export default function HomePage() {
           </div>
 
           <div>
-            <label className="text-base font-medium text-gray-700 mb-1 block">Reminder Time</label>
-            <input
-              type="time"
-              value={medReminderTime}
-              onChange={(e) => setMedReminderTime(e.target.value)}
-              className="w-full text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">You'll get a notification at this time</p>
+            <label className="text-base font-medium text-gray-700 mb-1 block">Reminder Times</label>
+            <p className="text-xs text-gray-500 mb-2">Add multiple times for medicines taken several times a day (e.g., eye drops 4x/day)</p>
+            
+            {/* Display current reminder times */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {medReminderTimes.map((time, index) => (
+                <div key={index} className="flex items-center gap-1 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg">
+                  <span className="text-sm font-semibold">{time}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeReminderTime(time)}
+                    className="ml-1 text-indigo-500 hover:text-red-500"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            {/* Add new time */}
+            <div className="flex gap-2">
+              <input
+                type="time"
+                value={newReminderTime}
+                onChange={(e) => setNewReminderTime(e.target.value)}
+                className="flex-1 text-base border-2 border-gray-300 rounded-xl p-3 focus:border-indigo-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={addReminderTime}
+                disabled={!newReminderTime}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Add
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">💡 Tip: For eye drops 4x/day, add times like 08:00, 12:00, 16:00, 20:00</p>
           </div>
           {editingMedicine && (
             <button onClick={() => { setDeleteConfirm(editingMedicine.id); setShowMedicineModal(false); }}

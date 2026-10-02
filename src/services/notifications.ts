@@ -5,7 +5,7 @@ export interface Reminder {
   medicineId: string;
   medicineName: string;
   dosage: string;
-  schedule: 'morning' | 'afternoon' | 'night';
+  schedule: 'morning' | 'afternoon' | 'night' | 'custom';
   reminderTime: string; // HH:MM format
   enabled: boolean;
 }
