@@ -1,13 +1,14 @@
 // Service Worker for offline support
-const CACHE_NAME = 'health-companion-v1';
+const CACHE_NAME = 'health-companion-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
 ];
 
-// Install - cache essential files
+// Install - cache essential files and skip waiting
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force activation immediately
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -37,17 +38,22 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Activate - clean up old caches
+// Activate - clean up old caches and claim all clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Claim all clients immediately
+      self.clients.claim()
+    ])
   );
 });
