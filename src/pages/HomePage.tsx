@@ -8,7 +8,7 @@ import { Modal, ConfirmDialog } from '../components/Modal';
 import { Medicine } from '../types';
 
 export default function HomePage() {
-  const { language, profile, updateProfile, medicines, vitals, appointments, medicationStatus, doctors, addVital, markMedicineTaken, addMedicine, updateMedicine, deleteMedicine } = useApp();
+  const { language, profile, updateProfile, medicines, vitals, appointments, medicationStatus, doctors, familyCode, addVital, markMedicineTaken, addMedicine, updateMedicine, deleteMedicine } = useApp();
   const t = translations[language];
 
   // Modals
@@ -205,9 +205,16 @@ export default function HomePage() {
             {profile.full_name || 'Tap to set name'} <Edit2 className="w-4 h-4" />
           </button>
         </div>
-        <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-          <Settings className="w-6 h-6" />
-        </button>
+        <div className="flex gap-2">
+          {familyCode && (
+            <div className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-semibold">
+              👨‍👩‍👧 {familyCode}
+            </div>
+          )}
+          <button onClick={() => { setProfileName(profile.full_name); setProfileDob(profile.date_of_birth || ''); setProfileEmergency(profile.emergency_contact || ''); setShowProfileModal(true); }} className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
       </div>
 
       {/* Quick Vitals */}

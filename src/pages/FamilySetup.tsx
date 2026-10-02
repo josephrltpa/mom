@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Users, Copy, Check, X } from 'lucide-react';
 
-export default function FamilySetup() {
+interface FamilySetupProps {
+  onComplete?: () => void;
+}
+
+export default function FamilySetup({ onComplete }: FamilySetupProps) {
   const { familyCode, setFamilyCode, profile } = useApp();
   const [mode, setMode] = useState<'choose' | 'create' | 'join'>('choose');
   const [inputCode, setInputCode] = useState('');
@@ -13,12 +17,20 @@ export default function FamilySetup() {
     const code = `FAM-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     setFamilyCode(code);
     setMode('create');
+    // Auto-close after 3 seconds if onComplete is provided
+    if (onComplete) {
+      setTimeout(onComplete, 3000);
+    }
   };
 
   const handleJoinFamily = () => {
     if (inputCode.trim()) {
       setFamilyCode(inputCode.trim().toUpperCase());
       setMode('join');
+      // Auto-close after 3 seconds if onComplete is provided
+      if (onComplete) {
+        setTimeout(onComplete, 3000);
+      }
     }
   };
 
@@ -48,7 +60,7 @@ export default function FamilySetup() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border-2 border-gray-200">
+        <div className="bg-white rounded-2xl p-5 border-2 border-gray-200 mb-6">
           <h3 className="text-lg font-bold text-gray-900 mb-3">How to Add Another Device</h3>
           <ol className="space-y-3 text-sm text-gray-700">
             <li className="flex gap-3">
@@ -65,6 +77,15 @@ export default function FamilySetup() {
             </li>
           </ol>
         </div>
+
+        {onComplete && (
+          <button
+            onClick={onComplete}
+            className="w-full bg-indigo-600 text-white rounded-xl py-4 font-semibold text-lg hover:bg-indigo-700 transition-colors"
+          >
+            Continue to App →
+          </button>
+        )}
       </div>
     );
   }
