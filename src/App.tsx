@@ -21,15 +21,17 @@ function AppContent() {
 
     // Sync medicine reminders
     medicines.forEach(med => {
-      if (med.reminder_time && med.is_active) {
-        reminderService.addReminder({
-          id: `${med.id}_${med.schedule}`,
-          medicineId: med.id,
-          medicineName: med.name,
-          dosage: med.dosage,
-          schedule: med.schedule,
-          reminderTime: med.reminder_time,
-          enabled: true,
+      if (med.reminder_times && med.reminder_times.length > 0 && med.is_active) {
+        med.reminder_times.forEach((time, index) => {
+          reminderService.addReminder({
+            id: `${med.id}_${index}`,
+            medicineId: med.id,
+            medicineName: med.name,
+            dosage: med.dosage,
+            schedule: med.schedule,
+            reminderTime: time,
+            enabled: true,
+          });
         });
       }
     });
