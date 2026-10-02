@@ -8,13 +8,14 @@ import CaregiverDashboard from './pages/CaregiverDashboard';
 import FamilySetup from './pages/FamilySetup';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { requestNotificationPermission, reminderService } from './services/notifications';
-import { Home, FileText, Stethoscope, UserCircle, Eye, Users } from 'lucide-react';
+import { Home, FileText, Stethoscope, UserCircle, Eye } from 'lucide-react';
 
-type Tab = 'home' | 'records' | 'doctors' | 'doctor' | 'caregiver' | 'family';
+type Tab = 'home' | 'records' | 'doctors' | 'doctor' | 'caregiver';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const { language, setLanguage, medicines } = useApp();
+  const { language, setLanguage, medicines, familyCode } = useApp();
+  const [showFamilySetup, setShowFamilySetup] = useState(false);
 
   // Initialize notification reminders
   useEffect(() => {
@@ -39,12 +40,26 @@ function AppContent() {
     });
   }, [medicines]);
 
+  // Show family setup on first load if no family code
+  useEffect(() => {
+    if (!familyCode) {
+      setShowFamilySetup(true);
+    }
+  }, [familyCode]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Connection Status Indicator */}
       <div className="fixed top-2 right-2 z-50">
         <ConnectionStatus />
       </div>
+
+      {/* Family Setup Overlay */}
+      {showFamilySetup && (
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+          <FamilySetup onComplete={() => setShowFamilySetup(false)} />
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="pt-safe">
@@ -53,10 +68,9 @@ function AppContent() {
         {activeTab === 'doctors' && <DoctorsPage />}
         {activeTab === 'doctor' && <DoctorViewPage />}
         {activeTab === 'caregiver' && <CaregiverDashboard />}
-        {activeTab === 'family' && <FamilySetup />}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - 5 tabs + language toggle */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg z-40">
         <div className="max-w-lg mx-auto flex items-end">
           <button
@@ -127,20 +141,6 @@ function AppContent() {
               <Eye className="w-6 h-6" />
             </div>
             <span className="text-[10px] font-semibold mt-0.5">Monitor</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('family')}
-            className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'family' ? 'text-indigo-600' : 'text-gray-400'
-            }`}
-          >
-            <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'family' ? 'bg-indigo-100' : ''
-            }`}>
-              <Users className="w-6 h-6" />
-            </div>
-            <span className="text-[10px] font-semibold mt-0.5">Family</span>
           </button>
 
           {/* Language Toggle */}
