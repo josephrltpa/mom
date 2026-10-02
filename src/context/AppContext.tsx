@@ -3,6 +3,8 @@ import { Medicine, VitalLog, Appointment, MedicalDocument, DailyMedicationStatus
 import { Doctor } from '../types/Doctor';
 import { mockMedicines, mockVitals, mockAppointments, mockDocuments } from '../data/mockData';
 import { Language } from '../i18n/translations';
+import { syncToSupabase, loadFromSupabase } from '../services/sync';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 interface AppState {
   language: Language;
@@ -99,11 +101,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   
   const [medicationStatus, setMedicationStatus] = useState<DailyMedicationStatus[]>([]);
+  const [userId, setUserId] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Save to localStorage
   const saveLocal = (key: string, data: unknown) => {
     safeStorage.set(key, JSON.stringify(data));
   };
+
+  // Initialize user ID and load from Supabase
+  useEffect(() => {
+    const initUser = async () => {
+      // Get or create user ID
+      let uid = safeStorage.get('health_user_id');
+      if (!uid) {
+        uid = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        safeStorage.set('health_user_id', uid);
+      }
+      setUserId(uid);
+
+      // Load from Supabase if configured
+      if (isSupabaseConfigured) {
+        const cloudData = await loadFromSupabase(uid);
+        if (cloudData) {
+          // Merge cloud data with local data (cloud takes precedence)
+          if (cloudData.profile) setProfile(cloudData.profile);
+          if (cloudData.medicines.length > 0) setMedicines(cloudData.medicines);
+          if (cloudData.vitals.length > 0) setVitals(cloudData.vitals);
+          if (cloudData.appointments.length > 0) setAppointments(cloudData.appointments);
+          if (cloudData.documents.length > 0) setDocuments(cloudData.documents);
+          if (cloudData.doctors.length > 0) setDoctors(cloudData.doctors);
+        }
+      }
+    };
+
+    initUser();
+  }, []);
+
+  // Auto-sync to Supabase whenever data changes
+  useEffect(() => {
+    if (!userId || !isSupabaseConfigured || isSyncing) return;
+
+    const syncData = async () => {
+      setIsSyncing(true);
+      await syncToSupabase(userId, {
+        profile,
+        medicines,
+        vitals,
+        appointments,
+        documents,
+        doctors,
+      });
+      setIsSyncing(false);
+    };
+
+    // Debounce sync to avoid too many requests
+    const timeoutId = setTimeout(syncData, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [profile, medicines, vitals, appointments, documents, doctors, userId]);
 
   const updateProfile = useCallback((updates: Partial<Profile>) => {
     setProfile(prev => {
