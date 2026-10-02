@@ -34,6 +34,8 @@ interface AppState {
   updateDoctor: (id: string, updates: Partial<Doctor>) => void;
   deleteDoctor: (id: string) => void;
   getDoctorById: (id: string) => Doctor | undefined;
+  familyCode: string;
+  setFamilyCode: (code: string) => void;
 }
 
 const defaultProfile: Profile = {
@@ -103,6 +105,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [medicationStatus, setMedicationStatus] = useState<DailyMedicationStatus[]>([]);
   const [userId, setUserId] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [familyCode, setFamilyCodeState] = useState<string>(() => {
+    const saved = safeStorage.get('health_family_code');
+    return saved || '';
+  });
 
   // Save to localStorage
   const saveLocal = (key: string, data: unknown) => {
@@ -112,12 +118,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Initialize user ID and load from Supabase
   useEffect(() => {
     const initUser = async () => {
-      // Get or create user ID
-      let uid = safeStorage.get('health_user_id');
-      if (!uid) {
-        uid = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        safeStorage.set('health_user_id', uid);
+      // Check if family code exists - if so, use it as the user ID base
+      const savedFamilyCode = safeStorage.get('health_family_code');
+      let uid: string;
+      
+      if (savedFamilyCode) {
+        // All devices with the same family code share the same data
+        uid = `family_${savedFamilyCode}`;
+        setFamilyCodeState(savedFamilyCode);
+      } else {
+        // No family code - use individual user ID
+        const savedUserId = safeStorage.get('health_user_id');
+        if (savedUserId) {
+          uid = savedUserId;
+        } else {
+          uid = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          safeStorage.set('health_user_id', uid);
+        }
       }
+      
       setUserId(uid);
 
       // Load from Supabase if configured
@@ -299,6 +318,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return doctors.find(d => d.id === id);
   }, [doctors]);
 
+  const setFamilyCode = useCallback((code: string) => {
+    setFamilyCodeState(code);
+    saveLocal('health_family_code', code);
+    // Update userId to be based on family code so all devices sync together
+    if (code) {
+      const familyUserId = `family_${code}`;
+      setUserId(familyUserId);
+      safeStorage.set('health_user_id', familyUserId);
+    }
+  }, []);
+
   return (
     <AppContext.Provider value={{
       language, setLanguage,
@@ -309,6 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       documents, addDocument, updateDocument, deleteDocument,
       medicationStatus, markMedicineTaken,
       doctors, addDoctor, updateDoctor, deleteDoctor, getDoctorById,
+      familyCode, setFamilyCode,
     }}>
       {children}
     </AppContext.Provider>
