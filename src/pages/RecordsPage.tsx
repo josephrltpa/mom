@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { translations } from '../i18n/translations';
 import { formatDate, formatTime, getBPStatus, getSugarStatus, getStatusColor, getStatusLabel } from '../utils/vitals';
-import { FileText, FlaskConical, Activity, ScanLine, Plus, ChevronDown, ChevronUp, Heart, Droplets, Edit2, Trash2, Calendar, Clock } from 'lucide-react';
+import { generateVitalsReport, exportVitalsAsCSV, exportVitalsAsText, downloadFile, shareVitalsReport } from '../utils/vitalsExport';
+import { FileText, FlaskConical, Activity, ScanLine, Plus, ChevronDown, ChevronUp, Heart, Droplets, Edit2, Trash2, Calendar, Clock, Download, Share2 } from 'lucide-react';
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { MedicalDocument, Appointment } from '../types';
 
 export default function RecordsPage() {
-  const { language, documents, vitals, appointments, addDocument, updateDocument, deleteDocument, addAppointment, updateAppointment, deleteAppointment } = useApp();
+  const { language, profile, documents, vitals, appointments, addDocument, updateDocument, deleteDocument, addAppointment, updateAppointment, deleteAppointment } = useApp();
   const t = translations[language];
   const [activeTab, setActiveTab] = useState<'labs' | 'prescriptions' | 'vitals' | 'appointments'>('labs');
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
@@ -36,6 +37,26 @@ export default function RecordsPage() {
   const [aptClinic, setAptClinic] = useState('');
   const [aptDate, setAptDate] = useState('');
   const [aptNotes, setAptNotes] = useState('');
+
+  // Export functions
+  const handleExportCSV = () => {
+    const report = generateVitalsReport(vitals, profile.full_name, profile.date_of_birth);
+    const csv = exportVitalsAsCSV(report);
+    const filename = `vitals_report_${profile.full_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadFile(csv, filename, 'text/csv');
+  };
+
+  const handleExportText = () => {
+    const report = generateVitalsReport(vitals, profile.full_name, profile.date_of_birth);
+    const text = exportVitalsAsText(report);
+    const filename = `vitals_report_${profile.full_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+    downloadFile(text, filename, 'text/plain');
+  };
+
+  const handleShareReport = () => {
+    const report = generateVitalsReport(vitals, profile.full_name, profile.date_of_birth);
+    shareVitalsReport(report);
+  };
 
   const prescriptions = documents.filter(d => d.category === 'prescription');
   const labDocs = documents.filter(d => d.category !== 'prescription');
@@ -230,6 +251,40 @@ export default function RecordsPage() {
       {/* VITALS TAB */}
       {activeTab === 'vitals' && (
         <>
+          {/* Export Buttons */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 mb-6 border border-indigo-200">
+            <h3 className="text-base font-semibold text-gray-700 mb-3">📤 Export Vitals for Doctor</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+              >
+                <Download className="w-6 h-6 text-indigo-600" />
+                <span className="text-xs font-semibold text-gray-700">CSV</span>
+                <span className="text-[10px] text-gray-500">Excel</span>
+              </button>
+              <button
+                onClick={handleExportText}
+                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+              >
+                <FileText className="w-6 h-6 text-indigo-600" />
+                <span className="text-xs font-semibold text-gray-700">Text</span>
+                <span className="text-[10px] text-gray-500">Download</span>
+              </button>
+              <button
+                onClick={handleShareReport}
+                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+              >
+                <Share2 className="w-6 h-6 text-indigo-600" />
+                <span className="text-xs font-semibold text-gray-700">Share</span>
+                <span className="text-[10px] text-gray-500">WhatsApp</span>
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-3 text-center">
+              {vitals.length} readings ready to export
+            </p>
+          </div>
+
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500" /> Blood Pressure History

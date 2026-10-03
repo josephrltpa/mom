@@ -1,6 +1,7 @@
 import { useApp } from '../context/AppContext';
 import { translations } from '../i18n/translations';
 import { getAverageBP, getAverageSugar, getBPStatus, getSugarStatus, getStatusColor, getStatusDotColor, getStatusLabel, formatDate } from '../utils/vitals';
+import { generateVitalsReport, exportVitalsAsText, downloadFile, shareVitalsReport } from '../utils/vitalsExport';
 import { Stethoscope, Pill, Heart, Droplets, FileText, Share2, Download, Calendar } from 'lucide-react';
 
 export default function DoctorViewPage() {
@@ -33,6 +34,13 @@ export default function DoctorViewPage() {
   const diabetesMedicines = activeMedicines.filter(m => m.condition_category === 'diabetes');
   const liverMedicines = activeMedicines.filter(m => m.condition_category === 'liver');
   const otherMedicines = activeMedicines.filter(m => m.condition_category === 'general');
+
+  const handleExportFullReport = () => {
+    const report = generateVitalsReport(vitals, profile.full_name, profile.date_of_birth);
+    const text = exportVitalsAsText(report);
+    const filename = `health_report_${profile.full_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+    downloadFile(text, filename, 'text/plain');
+  };
 
   const handleShare = () => {
     // Generate summary text
@@ -97,11 +105,11 @@ Next Appointment: ${nextAppointment ? `${nextAppointment.doctor_name} - ${format
           {t.shareSummary}
         </button>
         <button
-          onClick={handleShare}
+          onClick={handleExportFullReport}
           className="py-3 px-4 bg-white border-2 border-indigo-200 text-indigo-700 rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-95 transition-transform"
         >
           <Download className="w-5 h-5" />
-          PDF
+          Export
         </button>
       </div>
 
