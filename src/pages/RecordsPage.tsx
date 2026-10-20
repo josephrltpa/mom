@@ -25,6 +25,9 @@ export default function RecordsPage({ initialTab = 'labs' }: RecordsPageProps) {
   const [editingApt, setEditingApt] = useState<Appointment | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'doc' | 'apt'; id: string } | null>(null);
 
+  // Vitals sub-tab state
+  const [vitalsSubTab, setVitalsSubTab] = useState<'bp' | 'sugar'>('bp');
+
   // Doc form
   const [docTitle, setDocTitle] = useState('');
   const [docCategory, setDocCategory] = useState<MedicalDocument['category']>('lft');
@@ -306,67 +309,113 @@ export default function RecordsPage({ initialTab = 'labs' }: RecordsPageProps) {
             </div>
           </div>
 
-          {/* BP History - All Readings */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
-              <Heart className="w-6 h-6 text-pink-500" /> 
-              Blood Pressure History
-              <span className="text-sm font-normal text-gray-600">({vitals.filter(v => v.type === 'bp').length} readings)</span>
-            </h3>
-            <div className="space-y-2">
-              {vitals.filter(v => v.type === 'bp').map(v => {
-                const status = getBPStatus(v.systolic!, v.diastolic!);
-                return (
-                  <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <p className="text-2xl font-bold text-gray-900">{v.systolic}/{v.diastolic}</p>
-                        <span className="text-sm text-gray-600">mmHg</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(v.timestamp)} at {formatTime(v.timestamp)}
-                      </p>
-                    </div>
-                    <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
-                      {getStatusLabel(status)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Vitals Sub-Tabs */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setVitalsSubTab('bp')}
+              className={`flex-1 py-3 px-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-2 ${
+                vitalsSubTab === 'bp'
+                  ? 'bg-pink-500 text-white shadow-md'
+                  : 'bg-white text-pink-600 border-2 border-pink-200'
+              }`}
+            >
+              <Heart className="w-5 h-5" />
+              Blood Pressure
+              <span className="text-xs opacity-75">({vitals.filter(v => v.type === 'bp').length})</span>
+            </button>
+            <button
+              onClick={() => setVitalsSubTab('sugar')}
+              className={`flex-1 py-3 px-4 rounded-2xl font-semibold text-base transition-all flex items-center justify-center gap-2 ${
+                vitalsSubTab === 'sugar'
+                  ? 'bg-pink-500 text-white shadow-md'
+                  : 'bg-white text-pink-600 border-2 border-pink-200'
+              }`}
+            >
+              <Droplets className="w-5 h-5" />
+              Blood Sugar
+              <span className="text-xs opacity-75">({vitals.filter(v => v.type !== 'bp').length})</span>
+            </button>
           </div>
 
-          {/* Sugar History - All Readings */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
-              <Droplets className="w-6 h-6 text-pink-500" /> 
-              Blood Sugar History
-              <span className="text-sm font-normal text-gray-600">({vitals.filter(v => v.type !== 'bp').length} readings)</span>
-            </h3>
-            <div className="space-y-2">
-              {vitals.filter(v => v.type !== 'bp').map(v => {
-                const sugarType = v.type === 'fasting_sugar' ? 'fasting' : 'pp';
-                const status = getSugarStatus(v.glucose_value!, sugarType);
-                const typeLabel = v.type === 'fasting_sugar' ? 'Fasting' : v.type === 'pp_sugar' ? 'After Meal' : 'Random';
-                return (
-                  <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <p className="text-2xl font-bold text-gray-900">{v.glucose_value}</p>
-                        <span className="text-sm text-gray-600">mg/dL</span>
+          {/* BP History Sub-Tab */}
+          {vitalsSubTab === 'bp' && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
+                <Heart className="w-6 h-6 text-pink-500" /> 
+                Blood Pressure History
+              </h3>
+              {vitals.filter(v => v.type === 'bp').length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 border-2 border-pink-200 text-center">
+                  <Heart className="w-12 h-12 text-pink-300 mx-auto mb-3" />
+                  <p className="text-base text-gray-600">No blood pressure readings yet</p>
+                  <p className="text-sm text-gray-500 mt-1">Log your first reading from the Home tab</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {vitals.filter(v => v.type === 'bp').map(v => {
+                    const status = getBPStatus(v.systolic!, v.diastolic!);
+                    return (
+                      <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <p className="text-2xl font-bold text-gray-900">{v.systolic}/{v.diastolic}</p>
+                            <span className="text-sm text-gray-600">mmHg</span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {formatDate(v.timestamp)} at {formatTime(v.timestamp)}
+                          </p>
+                        </div>
+                        <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
+                          {getStatusLabel(status)}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {typeLabel} • {formatDate(v.timestamp)}
-                      </p>
-                    </div>
-                    <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
-                      {getStatusLabel(status)}
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Sugar History Sub-Tab */}
+          {vitalsSubTab === 'sugar' && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
+                <Droplets className="w-6 h-6 text-pink-500" /> 
+                Blood Sugar History
+              </h3>
+              {vitals.filter(v => v.type !== 'bp').length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 border-2 border-pink-200 text-center">
+                  <Droplets className="w-12 h-12 text-pink-300 mx-auto mb-3" />
+                  <p className="text-base text-gray-600">No blood sugar readings yet</p>
+                  <p className="text-sm text-gray-500 mt-1">Log your first reading from the Home tab</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {vitals.filter(v => v.type !== 'bp').map(v => {
+                    const sugarType = v.type === 'fasting_sugar' ? 'fasting' : 'pp';
+                    const status = getSugarStatus(v.glucose_value!, sugarType);
+                    const typeLabel = v.type === 'fasting_sugar' ? 'Fasting' : v.type === 'pp_sugar' ? 'After Meal' : 'Random';
+                    return (
+                      <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
+                        <div className="flex-1">
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <p className="text-2xl font-bold text-gray-900">{v.glucose_value}</p>
+                            <span className="text-sm text-gray-600">mg/dL</span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {typeLabel} • {formatDate(v.timestamp)}
+                          </p>
+                        </div>
+                        <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
+                          {getStatusLabel(status)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
