@@ -57,22 +57,32 @@ export default function HomePage() {
     return medicationStatus.some(s => s.medicineId === medId && s.schedule === schedule && s.taken);
   };
 
-  const chartData = getRecentVitals(vitals, 7)
-    .filter(v => v.type === 'bp' && v.systolic)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    .map(v => ({
-      date: new Date(v.timestamp).toLocaleDateString('en', { weekday: 'short' }),
-      systolic: v.systolic,
-      diastolic: v.diastolic,
-    }));
+  // Chart time range state
+  const [bpChartRange, setBpChartRange] = useState<'7' | '30' | 'all'>('7');
+  const [sugarChartRange, setSugarChartRange] = useState<'7' | '30' | 'all'>('7');
 
-  const sugarChartData = getRecentVitals(vitals, 7)
-    .filter(v => v.type !== 'bp' && v.glucose_value)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    .map(v => ({
-      date: new Date(v.timestamp).toLocaleDateString('en', { weekday: 'short' }),
-      value: v.glucose_value,
-    }));
+  const getChartData = (days: '7' | '30' | 'all', type: 'bp' | 'sugar') => {
+    let filtered = type === 'bp' 
+      ? vitals.filter(v => v.type === 'bp' && v.systolic)
+      : vitals.filter(v => v.type !== 'bp' && v.glucose_value);
+    
+    if (days !== 'all') {
+      const daysNum = parseInt(days);
+      filtered = getRecentVitals(filtered, daysNum);
+    }
+    
+    return filtered
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      .map(v => ({
+        date: new Date(v.timestamp).toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+        systolic: v.systolic,
+        diastolic: v.diastolic,
+        value: v.glucose_value,
+      }));
+  };
+
+  const bpChartData = getChartData(bpChartRange, 'bp');
+  const sugarChartData = getChartData(sugarChartRange, 'sugar');
 
   const handleSaveBP = () => {
     const sys = parseInt(bpSystolic);
@@ -217,82 +227,129 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Quick Vitals */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <button onClick={() => setShowBPModal(true)} className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-left active:scale-95 transition-transform">
-          <div className="flex items-center gap-2 mb-2">
-            <Heart className="w-6 h-6 text-red-500" />
-            <span className="text-base font-semibold text-gray-700">BP</span>
+      {/* Quick Vitals - Big Prominent Cards */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* BP Card */}
+        <button onClick={() => setShowBPModal(true)} className="bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-pink-300 rounded-3xl p-5 text-left active:scale-95 transition-transform shadow-md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-lg font-bold text-pink-700">Blood Pressure</span>
           </div>
           {latestBP ? (
             <>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-gray-900">{latestBP.systolic}/{latestBP.diastolic}</span>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-4xl font-bold text-gray-900">{latestBP.systolic}/{latestBP.diastolic}</span>
+                <span className="text-sm text-gray-600">mmHg</span>
               </div>
-              <div className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(getBPStatus(latestBP.systolic!, latestBP.diastolic!))}`}>
+              <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(getBPStatus(latestBP.systolic!, latestBP.diastolic!))}`}>
                 <div className={`w-2 h-2 rounded-full ${getStatusDotColor(getBPStatus(latestBP.systolic!, latestBP.diastolic!))}`}></div>
                 {getStatusLabel(getBPStatus(latestBP.systolic!, latestBP.diastolic!))}
               </div>
             </>
           ) : (
-            <div className="text-gray-400 text-base">--/--</div>
+            <div className="text-gray-400 text-2xl font-bold">--/--</div>
           )}
-          <div className="text-xs text-indigo-600 font-semibold mt-1">+ Log Reading</div>
+          <div className="text-sm text-pink-600 font-semibold mt-3 flex items-center gap-1">
+            <Plus className="w-4 h-4" /> Log Reading
+          </div>
         </button>
 
-        <button onClick={() => setShowSugarModal(true)} className="bg-white border-2 border-gray-200 rounded-2xl p-4 text-left active:scale-95 transition-transform">
-          <div className="flex items-center gap-2 mb-2">
-            <Droplets className="w-6 h-6 text-blue-500" />
-            <span className="text-base font-semibold text-gray-700">Sugar</span>
+        {/* Sugar Card */}
+        <button onClick={() => setShowSugarModal(true)} className="bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-pink-300 rounded-3xl p-5 text-left active:scale-95 transition-transform shadow-md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center">
+              <Droplets className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-lg font-bold text-pink-700">Blood Sugar</span>
           </div>
           {latestSugar ? (
             <>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-gray-900">{latestSugar.glucose_value}</span>
-                <span className="text-sm text-gray-500">mg/dL</span>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-4xl font-bold text-gray-900">{latestSugar.glucose_value}</span>
+                <span className="text-sm text-gray-600">mg/dL</span>
               </div>
-              <div className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(getSugarStatus(latestSugar.glucose_value!, latestSugar.type === 'fasting_sugar' ? 'fasting' : 'pp'))}`}>
+              <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(getSugarStatus(latestSugar.glucose_value!, latestSugar.type === 'fasting_sugar' ? 'fasting' : 'pp'))}`}>
                 <div className={`w-2 h-2 rounded-full ${getStatusDotColor(getSugarStatus(latestSugar.glucose_value!, latestSugar.type === 'fasting_sugar' ? 'fasting' : 'pp'))}`}></div>
                 {getStatusLabel(getSugarStatus(latestSugar.glucose_value!, latestSugar.type === 'fasting_sugar' ? 'fasting' : 'pp'))}
               </div>
             </>
           ) : (
-            <div className="text-gray-400 text-base">-- mg/dL</div>
+            <div className="text-gray-400 text-2xl font-bold">-- mg/dL</div>
           )}
-          <div className="text-xs text-indigo-600 font-semibold mt-1">+ Log Reading</div>
+          <div className="text-sm text-pink-600 font-semibold mt-3 flex items-center gap-1">
+            <Plus className="w-4 h-4" /> Log Reading
+          </div>
         </button>
       </div>
 
       {/* 7-Day Averages */}
-      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-4 mb-6 border border-indigo-100">
-        <h3 className="text-base font-semibold text-gray-700 mb-3">7-Day Averages</h3>
+      <div className="bg-gradient-to-r from-pink-100 to-rose-100 rounded-3xl p-5 mb-6 border-2 border-pink-200 shadow-sm">
+        <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
+          📊 7-Day Averages
+        </h3>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">BP Average</p>
-            <p className="text-2xl font-bold text-gray-900">{bp7.count > 0 ? `${bp7.systolic}/${bp7.diastolic}` : '--'}</p>
-            <p className="text-xs text-gray-500">{bp7.count} readings</p>
+          <div className="bg-white rounded-2xl p-4 border border-pink-200">
+            <p className="text-sm text-gray-600 mb-1">BP Average</p>
+            <p className="text-3xl font-bold text-pink-600">{bp7.count > 0 ? `${bp7.systolic}/${bp7.diastolic}` : '--'}</p>
+            <p className="text-xs text-gray-500 mt-1">{bp7.count} readings</p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Sugar (Fasting)</p>
-            <p className="text-2xl font-bold text-gray-900">{sugar7.count > 0 ? sugar7.value : '--'}</p>
-            <p className="text-xs text-gray-500">{sugar7.count} readings</p>
+          <div className="bg-white rounded-2xl p-4 border border-pink-200">
+            <p className="text-sm text-gray-600 mb-1">Sugar Average</p>
+            <p className="text-3xl font-bold text-pink-600">{sugar7.count > 0 ? sugar7.value : '--'}</p>
+            <p className="text-xs text-gray-500 mt-1">{sugar7.count} readings</p>
           </div>
         </div>
       </div>
 
-      {/* Charts */}
-      {chartData.length > 1 && (
-        <div className="bg-white rounded-2xl p-4 mb-6 border border-gray-200">
-          <h3 className="text-base font-semibold text-gray-700 mb-3">BP Trend (7 days)</h3>
+      {/* BP Chart */}
+      {bpChartData.length > 1 && (
+        <div className="bg-white rounded-2xl p-4 mb-6 border-2 border-pink-200 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-pink-500" />
+              Blood Pressure Trend
+            </h3>
+          </div>
+          
+          {/* Time Range Selector */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setBpChartRange('7')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                bpChartRange === '7' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => setBpChartRange('30')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                bpChartRange === '30' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              onClick={() => setBpChartRange('all')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                bpChartRange === 'all' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+
           <div className="w-full overflow-x-auto">
             <DualSparkline
-              data1={chartData.map(d => d.systolic as number)}
-              data2={chartData.map(d => d.diastolic as number)}
-              color1="#EF4444"
-              color2="#3B82F6"
-              width={Math.max(300, chartData.length * 50)}
-              height={120}
-              labels={chartData.map(d => d.date)}
+              data1={bpChartData.map((d: any) => d.systolic as number)}
+              data2={bpChartData.map((d: any) => d.diastolic as number)}
+              color1="#EC4899"
+              color2="#F472B6"
+              width={Math.max(300, bpChartData.length * 50)}
+              height={140}
+              labels={bpChartData.map((d: any) => d.date)}
               showLabels={true}
               legend1="Systolic"
               legend2="Diastolic"
@@ -301,16 +358,51 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Sugar Chart */}
       {sugarChartData.length > 1 && (
-        <div className="bg-white rounded-2xl p-4 mb-6 border border-gray-200">
-          <h3 className="text-base font-semibold text-gray-700 mb-3">Sugar Trend (7 days)</h3>
+        <div className="bg-white rounded-2xl p-4 mb-6 border-2 border-pink-200 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <Droplets className="w-5 h-5 text-pink-500" />
+              Blood Sugar Trend
+            </h3>
+          </div>
+          
+          {/* Time Range Selector */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setSugarChartRange('7')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                sugarChartRange === '7' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => setSugarChartRange('30')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                sugarChartRange === '30' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              30 Days
+            </button>
+            <button
+              onClick={() => setSugarChartRange('all')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                sugarChartRange === 'all' ? 'bg-pink-500 text-white' : 'bg-pink-50 text-pink-700'
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+
           <div className="w-full overflow-x-auto">
             <Sparkline
-              data={sugarChartData.map(d => d.value as number)}
-              color="#3B82F6"
+              data={sugarChartData.map((d: any) => d.value as number)}
+              color="#EC4899"
               width={Math.max(300, sugarChartData.length * 50)}
-              height={120}
-              labels={sugarChartData.map(d => d.date)}
+              height={140}
+              labels={sugarChartData.map((d: any) => d.date)}
               showLabels={true}
             />
           </div>

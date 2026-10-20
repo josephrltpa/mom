@@ -71,16 +71,16 @@ function AppContent() {
       </main>
 
       {/* Bottom Navigation - 5 tabs + language toggle */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-pink-200 shadow-lg z-40">
         <div className="max-w-lg mx-auto flex items-end">
           <button
             onClick={() => setActiveTab('home')}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'home' ? 'text-indigo-600' : 'text-gray-400'
+              activeTab === 'home' ? 'text-pink-600' : 'text-gray-400'
             }`}
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'home' ? 'bg-indigo-100' : ''
+              activeTab === 'home' ? 'bg-pink-100' : ''
             }`}>
               <Home className="w-6 h-6" />
             </div>
@@ -90,11 +90,11 @@ function AppContent() {
           <button
             onClick={() => setActiveTab('records')}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'records' ? 'text-indigo-600' : 'text-gray-400'
+              activeTab === 'records' ? 'text-pink-600' : 'text-gray-400'
             }`}
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'records' ? 'bg-indigo-100' : ''
+              activeTab === 'records' ? 'bg-pink-100' : ''
             }`}>
               <FileText className="w-6 h-6" />
             </div>
@@ -104,11 +104,11 @@ function AppContent() {
           <button
             onClick={() => setActiveTab('doctors')}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'doctors' ? 'text-indigo-600' : 'text-gray-400'
+              activeTab === 'doctors' ? 'text-pink-600' : 'text-gray-400'
             }`}
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'doctors' ? 'bg-indigo-100' : ''
+              activeTab === 'doctors' ? 'bg-pink-100' : ''
             }`}>
               <UserCircle className="w-6 h-6" />
             </div>
@@ -118,11 +118,11 @@ function AppContent() {
           <button
             onClick={() => setActiveTab('doctor')}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'doctor' ? 'text-indigo-600' : 'text-gray-400'
+              activeTab === 'doctor' ? 'text-pink-600' : 'text-gray-400'
             }`}
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'doctor' ? 'bg-indigo-100' : ''
+              activeTab === 'doctor' ? 'bg-pink-100' : ''
             }`}>
               <Stethoscope className="w-6 h-6" />
             </div>
@@ -132,11 +132,11 @@ function AppContent() {
           <button
             onClick={() => setActiveTab('caregiver')}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
-              activeTab === 'caregiver' ? 'text-indigo-600' : 'text-gray-400'
+              activeTab === 'caregiver' ? 'text-pink-600' : 'text-gray-400'
             }`}
           >
             <div className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
-              activeTab === 'caregiver' ? 'bg-indigo-100' : ''
+              activeTab === 'caregiver' ? 'bg-pink-100' : ''
             }`}>
               <Eye className="w-6 h-6" />
             </div>
@@ -146,9 +146,9 @@ function AppContent() {
           {/* Language Toggle */}
           <button
             onClick={() => setLanguage(language === 'en' ? 'mizo' : 'en')}
-            className="flex flex-col items-center py-2 px-2 text-gray-500 hover:text-indigo-600 transition-all"
+            className="flex flex-col items-center py-2 px-2 text-gray-500 hover:text-pink-600 transition-all"
           >
-            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100">
+            <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-pink-50">
               <span className="text-xs font-bold">{language === 'en' ? 'MZ' : 'EN'}</span>
             </div>
             <span className="text-[9px] font-semibold mt-0.5">{language === 'en' ? 'Mizo' : 'Eng'}</span>
