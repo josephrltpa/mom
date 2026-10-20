@@ -7,7 +7,11 @@ import { Heart, Droplets, Pill, Calendar, Clock, Check, Plus, Edit2, Trash2, Set
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { Medicine } from '../types';
 
-export default function HomePage() {
+interface HomePageProps {
+  onNavigateToVitals?: () => void;
+}
+
+export default function HomePage({ onNavigateToVitals }: HomePageProps) {
   const { language, profile, updateProfile, medicines, vitals, appointments, medicationStatus, doctors, familyCode, addVital, markMedicineTaken, addMedicine, updateMedicine, deleteMedicine } = useApp();
   const t = translations[language];
 
@@ -286,9 +290,19 @@ export default function HomePage() {
 
       {/* 7-Day Averages */}
       <div className="bg-gradient-to-r from-pink-100 to-rose-100 rounded-3xl p-5 mb-6 border-2 border-pink-200 shadow-sm">
-        <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
-          📊 7-Day Averages
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-pink-800 flex items-center gap-2">
+            📊 7-Day Averages
+          </h3>
+          {onNavigateToVitals && vitals.length > 0 && (
+            <button
+              onClick={onNavigateToVitals}
+              className="px-4 py-2 bg-pink-500 text-white rounded-xl text-sm font-semibold flex items-center gap-1 active:scale-95 transition-transform shadow-sm"
+            >
+              View All Readings →
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white rounded-2xl p-4 border border-pink-200">
             <p className="text-sm text-gray-600 mb-1">BP Average</p>
@@ -304,7 +318,7 @@ export default function HomePage() {
       </div>
 
       {/* BP Chart */}
-      {bpChartData.length > 1 && (
+      {bpChartData.length > 0 && (
         <div className="bg-white rounded-2xl p-4 mb-6 border-2 border-pink-200 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -359,7 +373,7 @@ export default function HomePage() {
       )}
 
       {/* Sugar Chart */}
-      {sugarChartData.length > 1 && (
+      {sugarChartData.length > 0 && (
         <div className="bg-white rounded-2xl p-4 mb-6 border-2 border-pink-200 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
