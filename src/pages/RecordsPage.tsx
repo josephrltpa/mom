@@ -251,79 +251,117 @@ export default function RecordsPage() {
       {/* VITALS TAB */}
       {activeTab === 'vitals' && (
         <>
-          {/* Export Buttons */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 mb-6 border border-indigo-200">
-            <h3 className="text-base font-semibold text-gray-700 mb-3">📤 Export Vitals for Doctor</h3>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Export Section - Big and Prominent */}
+          <div className="bg-gradient-to-br from-pink-100 to-rose-100 rounded-3xl p-5 mb-6 border-2 border-pink-300 shadow-md">
+            <h3 className="text-lg font-bold text-pink-800 mb-2 flex items-center gap-2">
+              📤 Export for Doctor
+            </h3>
+            <p className="text-sm text-pink-700 mb-4">
+              Share your vitals report with your doctor
+            </p>
+            
+            <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={handleExportCSV}
-                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 py-4 bg-white border-2 border-pink-300 rounded-2xl hover:bg-pink-50 active:scale-95 transition-all shadow-sm"
               >
-                <Download className="w-6 h-6 text-indigo-600" />
-                <span className="text-xs font-semibold text-gray-700">CSV</span>
-                <span className="text-[10px] text-gray-500">Excel</span>
+                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
+                  <Download className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-bold text-pink-700">CSV</span>
+                <span className="text-xs text-gray-600">Excel</span>
               </button>
+              
               <button
                 onClick={handleExportText}
-                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 py-4 bg-white border-2 border-pink-300 rounded-2xl hover:bg-pink-50 active:scale-95 transition-all shadow-sm"
               >
-                <FileText className="w-6 h-6 text-indigo-600" />
-                <span className="text-xs font-semibold text-gray-700">Text</span>
-                <span className="text-[10px] text-gray-500">Download</span>
+                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-bold text-pink-700">Text</span>
+                <span className="text-xs text-gray-600">Download</span>
               </button>
+              
               <button
                 onClick={handleShareReport}
-                className="flex flex-col items-center gap-1 py-3 bg-white border-2 border-indigo-200 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 py-4 bg-white border-2 border-pink-300 rounded-2xl hover:bg-pink-50 active:scale-95 transition-all shadow-sm"
               >
-                <Share2 className="w-6 h-6 text-indigo-600" />
-                <span className="text-xs font-semibold text-gray-700">Share</span>
-                <span className="text-[10px] text-gray-500">WhatsApp</span>
+                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
+                  <Share2 className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-bold text-pink-700">Share</span>
+                <span className="text-xs text-gray-600">WhatsApp</span>
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              {vitals.length} readings ready to export
-            </p>
+            
+            <div className="mt-4 bg-white rounded-2xl p-3 border border-pink-200">
+              <p className="text-sm text-gray-700 text-center">
+                <span className="font-bold text-pink-600">{vitals.length}</span> readings ready to export
+              </p>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Heart className="w-5 h-5 text-red-500" /> Blood Pressure History
+          {/* BP History - All Readings */}
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
+              <Heart className="w-6 h-6 text-pink-500" /> 
+              Blood Pressure History
+              <span className="text-sm font-normal text-gray-600">({vitals.filter(v => v.type === 'bp').length} readings)</span>
             </h3>
-            {vitals.filter(v => v.type === 'bp').slice(0, 15).map(v => {
-              const status = getBPStatus(v.systolic!, v.diastolic!);
-              return (
-                <div key={v.id} className={`flex items-center justify-between bg-white rounded-xl p-3 mb-2 border-l-4 ${status === 'critical' ? 'border-red-500' : status === 'borderline' ? 'border-yellow-500' : 'border-green-500'} border border-gray-200`}>
-                  <div>
-                    <p className="text-xl font-bold text-gray-900">{v.systolic}/{v.diastolic} <span className="text-sm font-normal text-gray-500">mmHg</span></p>
-                    <p className="text-sm text-gray-500">{formatDate(v.timestamp)} • {formatTime(v.timestamp)}</p>
+            <div className="space-y-2">
+              {vitals.filter(v => v.type === 'bp').map(v => {
+                const status = getBPStatus(v.systolic!, v.diastolic!);
+                return (
+                  <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <p className="text-2xl font-bold text-gray-900">{v.systolic}/{v.diastolic}</p>
+                        <span className="text-sm text-gray-600">mmHg</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(v.timestamp)} at {formatTime(v.timestamp)}
+                      </p>
+                    </div>
+                    <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
+                      {getStatusLabel(status)}
+                    </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(status)}`}>
-                    {getStatusLabel(status)}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Droplets className="w-5 h-5 text-blue-500" /> Blood Sugar History
+
+          {/* Sugar History - All Readings */}
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-pink-800 mb-3 flex items-center gap-2">
+              <Droplets className="w-6 h-6 text-pink-500" /> 
+              Blood Sugar History
+              <span className="text-sm font-normal text-gray-600">({vitals.filter(v => v.type !== 'bp').length} readings)</span>
             </h3>
-            {vitals.filter(v => v.type !== 'bp').slice(0, 15).map(v => {
-              const sugarType = v.type === 'fasting_sugar' ? 'fasting' : 'pp';
-              const status = getSugarStatus(v.glucose_value!, sugarType);
-              const typeLabel = v.type === 'fasting_sugar' ? 'Fasting' : v.type === 'pp_sugar' ? 'After Meal' : 'Random';
-              return (
-                <div key={v.id} className={`flex items-center justify-between bg-white rounded-xl p-3 mb-2 border-l-4 ${status === 'critical' ? 'border-red-500' : status === 'borderline' ? 'border-yellow-500' : 'border-green-500'} border border-gray-200`}>
-                  <div>
-                    <p className="text-xl font-bold text-gray-900">{v.glucose_value} <span className="text-sm font-normal text-gray-500">mg/dL</span></p>
-                    <p className="text-sm text-gray-500">{typeLabel} • {formatDate(v.timestamp)}</p>
+            <div className="space-y-2">
+              {vitals.filter(v => v.type !== 'bp').map(v => {
+                const sugarType = v.type === 'fasting_sugar' ? 'fasting' : 'pp';
+                const status = getSugarStatus(v.glucose_value!, sugarType);
+                const typeLabel = v.type === 'fasting_sugar' ? 'Fasting' : v.type === 'pp_sugar' ? 'After Meal' : 'Random';
+                return (
+                  <div key={v.id} className={`flex items-center justify-between bg-white rounded-2xl p-4 border-2 ${status === 'critical' ? 'border-red-300 bg-red-50' : status === 'borderline' ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}`}>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <p className="text-2xl font-bold text-gray-900">{v.glucose_value}</p>
+                        <span className="text-sm text-gray-600">mg/dL</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {typeLabel} • {formatDate(v.timestamp)}
+                      </p>
+                    </div>
+                    <div className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(status)}`}>
+                      {getStatusLabel(status)}
+                    </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(status)}`}>
-                    {getStatusLabel(status)}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </>
       )}
