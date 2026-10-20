@@ -14,6 +14,7 @@ type Tab = 'home' | 'records' | 'doctors' | 'doctor' | 'caregiver';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [recordsInitialTab, setRecordsInitialTab] = useState<'labs' | 'prescriptions' | 'vitals' | 'appointments'>('labs');
   const { language, setLanguage, medicines, familyCode } = useApp();
   const [showFamilySetup, setShowFamilySetup] = useState(false);
 
@@ -63,8 +64,11 @@ function AppContent() {
 
       {/* Main Content */}
       <main className="pt-safe">
-        {activeTab === 'home' && <HomePage />}
-        {activeTab === 'records' && <RecordsPage />}
+        {activeTab === 'home' && <HomePage onNavigateToVitals={() => {
+          setRecordsInitialTab('vitals');
+          setActiveTab('records');
+        }} />}
+        {activeTab === 'records' && <RecordsPage initialTab={recordsInitialTab} />}
         {activeTab === 'doctors' && <DoctorsPage />}
         {activeTab === 'doctor' && <DoctorViewPage />}
         {activeTab === 'caregiver' && <CaregiverDashboard />}
@@ -88,7 +92,10 @@ function AppContent() {
           </button>
 
           <button
-            onClick={() => setActiveTab('records')}
+            onClick={() => {
+              setRecordsInitialTab('labs');
+              setActiveTab('records');
+            }}
             className={`flex-1 flex flex-col items-center py-2 px-1 transition-all ${
               activeTab === 'records' ? 'text-pink-600' : 'text-gray-400'
             }`}

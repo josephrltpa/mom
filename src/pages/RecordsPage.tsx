@@ -7,10 +7,14 @@ import { FileText, FlaskConical, Activity, ScanLine, Plus, ChevronDown, ChevronU
 import { Modal, ConfirmDialog } from '../components/Modal';
 import { MedicalDocument, Appointment } from '../types';
 
-export default function RecordsPage() {
+interface RecordsPageProps {
+  initialTab?: 'labs' | 'prescriptions' | 'vitals' | 'appointments';
+}
+
+export default function RecordsPage({ initialTab = 'labs' }: RecordsPageProps) {
   const { language, profile, documents, vitals, appointments, addDocument, updateDocument, deleteDocument, addAppointment, updateAppointment, deleteAppointment } = useApp();
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'labs' | 'prescriptions' | 'vitals' | 'appointments'>('labs');
+  const [activeTab, setActiveTab] = useState<'labs' | 'prescriptions' | 'vitals' | 'appointments'>(initialTab);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
   const [labFilter, setLabFilter] = useState<string>('all');
 
